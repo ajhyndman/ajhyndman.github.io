@@ -7656,15 +7656,16 @@ var _elm_lang$html$Html_Events$Options = F2(
 var _user$project$Constants$grid_spacing = 20;
 var _user$project$Constants$grid_size = 19;
 
-var _user$project$Model$Model = F3(
-	function (a, b, c) {
-		return {turn: a, board: b, history: c};
+var _user$project$Model$Model = F4(
+	function (a, b, c, d) {
+		return {turn: a, captures: b, board: c, history: d};
 	});
 var _user$project$Model$Empty = {ctor: 'Empty'};
 var _user$project$Model$White = {ctor: 'White'};
 var _user$project$Model$Black = {ctor: 'Black'};
 var _user$project$Model$init = {
 	turn: _user$project$Model$Black,
+	captures: {black: 0, white: 0},
 	board: A2(
 		_elm_lang$core$Array$initialize,
 		_user$project$Constants$grid_size,
@@ -7840,8 +7841,8 @@ var _user$project$Update$getIn = F4(
 			$default,
 			A2(_elm_lang$core$Array$get, col, thisRow));
 	});
-var _user$project$Update$removeGroup = F2(
-	function (board, point) {
+var _user$project$Update$removeGroup = F3(
+	function (board, point, removedCount) {
 		var neighbours = A2(_user$project$Update$getNeighbours, board, point);
 		var thisRow = A2(
 			_elm_lang$core$Maybe$withDefault,
@@ -7859,60 +7860,68 @@ var _user$project$Update$removeGroup = F2(
 		return A3(
 			_elm_lang$core$List$foldl,
 			F2(
-				function (neighbour, prevBoard) {
+				function (neighbour, prev) {
+					var _p0 = prev;
+					var prevBoard = _p0._0;
+					var prevCount = _p0._1;
 					return _elm_lang$core$Native_Utils.eq(
 						A4(_user$project$Update$getIn, neighbour.row, neighbour.col, _user$project$Model$Empty, prevBoard),
-						thisColor) ? A2(_user$project$Update$removeGroup, prevBoard, neighbour) : prevBoard;
+						thisColor) ? A3(_user$project$Update$removeGroup, prevBoard, neighbour, prevCount) : prev;
 				}),
-			nextBoard,
+			{ctor: '_Tuple2', _0: nextBoard, _1: removedCount + 1},
 			neighbours);
 	});
 var _user$project$Update$update = F2(
 	function (action, model) {
-		var _p0 = action;
-		switch (_p0.ctor) {
+		var _p1 = action;
+		switch (_p1.ctor) {
 			case 'PLACE_STONE':
-				var _p2 = _p0._0;
-				var _p1 = _p0._1;
+				var _p6 = _p1._0;
+				var _p5 = _p1._1;
 				var player = model.turn;
 				var opponent = _elm_lang$core$Native_Utils.eq(player, _user$project$Model$Black) ? _user$project$Model$White : _user$project$Model$Black;
-				var point = {row: _p2, col: _p1};
+				var point = {row: _p6, col: _p5};
 				var pointState = A2(
 					_elm_lang$core$Maybe$withDefault,
 					_user$project$Model$Empty,
 					A2(
 						_elm_lang$core$Array$get,
-						_p1,
+						_p5,
 						A2(
 							_elm_lang$core$Maybe$withDefault,
 							_elm_lang$core$Array$empty,
-							A2(_elm_lang$core$Array$get, _p2, model.board))));
+							A2(_elm_lang$core$Array$get, _p6, model.board))));
 				if (_elm_lang$core$Native_Utils.eq(pointState, _user$project$Model$Empty)) {
 					var rowContents = A2(
 						_elm_lang$core$Maybe$withDefault,
 						_elm_lang$core$Array$empty,
-						A2(_elm_lang$core$Array$get, _p2, model.board));
+						A2(_elm_lang$core$Array$get, _p6, model.board));
 					var tryStone = _elm_lang$core$Native_Utils.update(
 						model,
 						{
 							board: A3(
 								_elm_lang$core$Array$set,
-								_p2,
-								A3(_elm_lang$core$Array$set, _p1, model.turn, rowContents),
+								_p6,
+								A3(_elm_lang$core$Array$set, _p5, model.turn, rowContents),
 								model.board),
 							turn: _elm_lang$core$Native_Utils.eq(model.turn, _user$project$Model$Black) ? _user$project$Model$White : _user$project$Model$Black
 						});
 					var neighbours = A2(_user$project$Update$getNeighbours, tryStone.board, point);
-					var removedDeadStones = A3(
+					var _p2 = A3(
 						_elm_lang$core$List$foldl,
 						F2(
-							function (neighbour, prevBoard) {
+							function (neighbour, prev) {
+								var _p3 = prev;
+								var prevBoard = _p3._0;
+								var prevCount = _p3._1;
 								var neighbourLiberties = A3(_user$project$Update$getLiberties, prevBoard, neighbour, opponent);
 								var neighbourColor = A4(_user$project$Update$getIn, neighbour.row, neighbour.col, _user$project$Model$Empty, prevBoard);
-								return (_elm_lang$core$Native_Utils.eq(neighbourColor, opponent) && _elm_lang$core$Native_Utils.eq(neighbourLiberties, 0)) ? A2(_user$project$Update$removeGroup, prevBoard, neighbour) : prevBoard;
+								return (_elm_lang$core$Native_Utils.eq(neighbourColor, opponent) && _elm_lang$core$Native_Utils.eq(neighbourLiberties, 0)) ? A3(_user$project$Update$removeGroup, prevBoard, neighbour, prevCount) : prev;
 							}),
-						tryStone.board,
+						{ctor: '_Tuple2', _0: tryStone.board, _1: 0},
 						neighbours);
+					var removedDeadStones = _p2._0;
+					var captureCount = _p2._1;
 					var liberties = A3(_user$project$Update$getLiberties, removedDeadStones, point, player);
 					if (_elm_lang$core$Native_Utils.eq(liberties, 0)) {
 						return A2(_elm_lang$core$Debug$log, 'You have attempted suicide!', model);
@@ -7922,6 +7931,22 @@ var _user$project$Update$update = F2(
 							tryStone,
 							{
 								board: removedDeadStones,
+								captures: function () {
+									var captures = model.captures;
+									var _p4 = model.turn;
+									switch (_p4.ctor) {
+										case 'Black':
+											return _elm_lang$core$Native_Utils.update(
+												captures,
+												{black: captures.black + captureCount});
+										case 'White':
+											return _elm_lang$core$Native_Utils.update(
+												captures,
+												{white: captures.white + captureCount});
+										default:
+											return captures;
+									}
+								}(),
 								history: A2(_elm_lang$core$List_ops['::'], model.board, model.history)
 							});
 						return _elm_lang$core$Native_Utils.eq(
@@ -8272,12 +8297,76 @@ var _user$project$Components_ControlPanel$controlPanel = function (props) {
 					[
 						_user$project$Components_PassButton$passButton(
 						{})
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('col s2')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('row')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_user$project$Components_TurnIndicator$turnIndicator(
+								{color: _user$project$Model$Black, size: 20}),
+								A2(
+								_elm_lang$html$Html$span,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('badge'),
+										_elm_lang$html$Html_Attributes$style(
+										_elm_lang$core$Native_List.fromArray(
+											[
+												{ctor: '_Tuple2', _0: 'color', _1: 'white'}
+											]))
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text(
+										_elm_lang$core$Basics$toString(props.captures.black))
+									]))
+							])),
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('row')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_user$project$Components_TurnIndicator$turnIndicator(
+								{color: _user$project$Model$White, size: 20}),
+								A2(
+								_elm_lang$html$Html$span,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('badge'),
+										_elm_lang$html$Html_Attributes$style(
+										_elm_lang$core$Native_List.fromArray(
+											[
+												{ctor: '_Tuple2', _0: 'color', _1: 'white'}
+											]))
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text(
+										_elm_lang$core$Basics$toString(props.captures.white))
+									]))
+							]))
 					]))
 			]));
 };
-var _user$project$Components_ControlPanel$Props = function (a) {
-	return {turn: a};
-};
+var _user$project$Components_ControlPanel$Props = F2(
+	function (a, b) {
+		return {captures: a, turn: b};
+	});
 
 var _user$project$View$view = function (model) {
 	return A2(
@@ -8320,7 +8409,7 @@ var _user$project$View$view = function (model) {
 						_elm_lang$core$Native_List.fromArray(
 							[
 								_user$project$Components_ControlPanel$controlPanel(
-								{turn: model.turn})
+								{captures: model.captures, turn: model.turn})
 							]))
 					]))
 			]));
