@@ -8310,7 +8310,12 @@ var _user$project$Components_ControlPanel$controlPanel = function (props) {
 						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html_Attributes$class('row')
+								_elm_lang$html$Html_Attributes$class('row'),
+								_elm_lang$html$Html_Attributes$style(
+								_elm_lang$core$Native_List.fromArray(
+									[
+										{ctor: '_Tuple2', _0: 'position', _1: 'relative'}
+									]))
 							]),
 						_elm_lang$core$Native_List.fromArray(
 							[
@@ -8337,7 +8342,12 @@ var _user$project$Components_ControlPanel$controlPanel = function (props) {
 						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html_Attributes$class('row')
+								_elm_lang$html$Html_Attributes$class('row'),
+								_elm_lang$html$Html_Attributes$style(
+								_elm_lang$core$Native_List.fromArray(
+									[
+										{ctor: '_Tuple2', _0: 'position', _1: 'relative'}
+									]))
 							]),
 						_elm_lang$core$Native_List.fromArray(
 							[
